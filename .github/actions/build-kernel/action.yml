@@ -7,6 +7,10 @@ inputs:
   version:
     description: 'Kernel config version (e.g., android14-6.1)'
     required: true
+  kmi_generation:
+    description: 'KMI generation number for this branch (e.g., 8). Empty = omit from local version.'
+    required: false
+    default: ""
 
 runs:
   using: composite
@@ -37,12 +41,33 @@ runs:
   - name: Setup Kernel Configs
     if: false
     uses: ./.github/actions/set-kernel-config
-  
+
   - name: 'Build Kernel'
     shell: bash
     working-directory: ${{ github.workspace }}/kernel
     run: |
       sed -i 's/check_defconfig//' ./common/build.config.gki
+
+      DAY_OF_YEAR=$(date +%j)
+      COMMIT_COUNT=$(printf "%05d" $(( (DAY_OF_YEAR % 90) + 10 )))
+      COMMIT_HASH=$(git rev-parse --short=12 HEAD 2>/dev/null || echo "f4321180a397")
+      BUILD_NUM=${GITHUB_RUN_ID: -8}
+
+      export BUILD_NUMBER="${BUILD_NUM}"
+
+      VERSION_INPUT="${{ inputs.version }}"
+      ANDROID_RELEASE="${VERSION_INPUT%%-*}"
+
+      if [ -n "${{ inputs.kmi_generation }}" ]; then
+        KMI_SUFFIX="-${ANDROID_RELEASE}-${{ inputs.kmi_generation }}"
+      else
+        KMI_SUFFIX=""
+      fi
+
+      echo '#!/bin/sh' > ./common/scripts/setlocalversion
+      echo "echo \"${KMI_SUFFIX}-${COMMIT_COUNT}-g${COMMIT_HASH}-ab${BUILD_NUM}\"" >> ./common/scripts/setlocalversion
+      chmod +x ./common/scripts/setlocalversion
+
       if [ -f "build/build.sh" ]; then
         BUILD_GKI_ARTIFACTS="" \
         BUILD_GKI_CERTIFICATION_TOOLS=0 \
@@ -82,7 +107,8 @@ runs:
           cp "bazel-bin/common/kernel_aarch64/Image" "${{ github.workspace }}/AnyKernel3/Image"
         fi
         exit 0
-        fi
+      fi
+
       if [ -f "/home/runner/out/dist/Image" ]; then
         echo "Found Image at /home/runner/out/dist/Image"
         if [[ ${{ inputs.bypass }} == "true" ]]; then
@@ -103,4 +129,3 @@ runs:
       set -euo pipefail
       cp ${{ github.action_path }}/patches/bypass.patch "${{ github.workspace }}/AnyKernel3/bypass.patch"
       patch -p1 < bypass.patch
-
