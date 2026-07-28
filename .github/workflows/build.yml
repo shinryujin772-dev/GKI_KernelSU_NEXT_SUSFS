@@ -35,6 +35,10 @@ on:
         required: false
         type: string
         default: ""
+      kmi_generation:
+        required: false
+        type: string
+        default: ""
 
 jobs:
   build-gki:
@@ -227,15 +231,6 @@ jobs:
           perl -i -pe 's/^(\s*)return 1$/$1print("Who Cares? Bypassing Now!")\n$1return 0/g if /if missing_symbols:/../return 1/' build/kernel/abi/check_buildtime_symbol_protection.py
         fi
 
-    - name: Apply Kernel Branding
-      uses: ./.github/actions/apply-kernel-branding
-      with:
-        variant: ${{ inputs.variant }}
-        kernel_version: ${{ inputs.kernel_version }}
-        android_version: ${{ inputs.android_version }}
-        version: ${{ inputs.version }}
-        sublevel: ${{ steps.extract.outputs.sublevel }}
-
     - name: Remove Protected Exports
       uses: ./.github/actions/remove-protected-exports
 
@@ -338,6 +333,7 @@ jobs:
       uses: ./.github/actions/build-kernel
       with:
         version: ${{ inputs.version }}
+        kmi_generation: ${{ inputs.kmi_generation }}
         bypass: false
 
     - name: Get Cache Stats
@@ -375,6 +371,7 @@ jobs:
       with:
         bypass: true
         version: ${{ inputs.version }}
+        kmi_generation: ${{ inputs.kmi_generation }}
 
     - name: 📋 Consolidated Build Summary
       if: ${{ always() }}
