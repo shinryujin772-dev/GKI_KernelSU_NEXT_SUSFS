@@ -50,7 +50,7 @@ on:
           - FULL
         default: FULL
       ksu_branch:
-        description: "KernelSU branch or commit (empty = latest dev-susfs branch tip)"
+        description: "KernelSU branch or commit (empty = latest branch tip)"
         type: string
         required: false
         default: ""
