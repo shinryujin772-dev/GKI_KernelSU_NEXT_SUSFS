@@ -23,14 +23,12 @@ runs:
         echo "Preparing SUSFS for branch: $SUSFS_BRANCH"
         echo "Cloning latest from $SUSFS_BRANCH..."
         git clone "$SUSFS_REPO" -b "$SUSFS_BRANCH" susfs4ksu
+        cd ${{ github.workspace }}/susfs4ksu
 
         if [ -n "${{ inputs.susfs_commit }}" ]; then
           echo "Checking out SUSFS commit: ${{ inputs.susfs_commit }}"
-          cd ${{ github.workspace }}/susfs4ksu
           git checkout "${{ inputs.susfs_commit }}"
         fi
-
-        cd susfs4ksu
 
         COMMIT1="1addfb5688e6249bb1bedbe5d2e54537a79aed14"
         COMMIT2="353a0ee1375068d8aa85fb72de0b5c355ec96698"
