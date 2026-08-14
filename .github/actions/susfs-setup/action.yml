@@ -8,7 +8,6 @@ inputs:
   version:
     description: 'Kernel config version (e.g., android15-6.6)'
     required: true
-
 runs:
   using: "composite"
   steps:
@@ -16,19 +15,26 @@ runs:
       shell: bash
       run: |
         set -euo pipefail
-
+        # Retry transient network errors (up to 5 attempts, 5s backoff).
+        retry() {
+          local n=0
+          until [ "$n" -ge 5 ]; do
+            "$@" && return 0
+            n=$((n+1))
+            echo "retry $n/5 failed for: $*" >&2
+            sleep 5
+          done
+          return 1
+        }
         SUSFS_BRANCH="gki-${{ inputs.version }}"
         SUSFS_REPO="https://gitlab.com/simonpunk/susfs4ksu.git"
-
         echo "Preparing SUSFS for branch: $SUSFS_BRANCH"
         echo "Cloning latest from $SUSFS_BRANCH..."
-        git clone "$SUSFS_REPO" -b "$SUSFS_BRANCH" susfs4ksu
+        retry git clone "$SUSFS_REPO" -b "$SUSFS_BRANCH" susfs4ksu
         cd ${{ github.workspace }}/susfs4ksu
-
         if [ -n "${{ inputs.susfs_commit }}" ]; then
           echo "Checking out SUSFS commit: ${{ inputs.susfs_commit }}"
-          git checkout "${{ inputs.susfs_commit }}"
+          retry git checkout "${{ inputs.susfs_commit }}"
         fi
-
         patch -p1 < "${{ github.workspace }}/kernel_patches/pershoot/susfs4ksu/0001-pershoot-Allow-core-to-be-built-with-no-features.patch"
         patch -p1 < "${{ github.workspace }}/kernel_patches/pershoot/susfs4ksu/0002-pershoot-Implement-SuSFS-and-Toolkit-coexistence.patch"
