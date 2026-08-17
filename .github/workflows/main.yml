@@ -37,6 +37,7 @@ on:
         description: "Feature Set"
         type: choice
         options:
+          - KSUN+SUSFS+NOMOUNT
           - KSUN+SUSFS+BBG+NET+DS
           - KSUN+SUSFS+BBG
           - KSUN+SUSFS+NET
@@ -46,6 +47,7 @@ on:
           - KSUN+NET
           - KSUN+DS
           - KSUN
+          - NOMOUNT
           - NONE
           - FULL
         default: FULL
